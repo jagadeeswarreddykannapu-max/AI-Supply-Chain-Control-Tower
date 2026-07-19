@@ -30,5 +30,20 @@ This project demonstrates how workflow automation and business intelligence can 
 - JavaScript
 - Google Sheets
 - Power BI
+---
+
+# 🔄 Workflow Overview
+
+The AI Supply Chain Control Tower consists of seven interconnected automation workflows that support end-to-end supply chain decision-making.
+
+| Workflow | Description |
+|----------|-------------|
+| Inventory Intelligence | Monitors inventory levels, stock risks, and replenishment requirements. |
+| Supplier Risk Intelligence | Evaluates supplier performance and identifies operational risks. |
+| AI Procurement Advisor | Provides procurement recommendations based on business rules and operational data. |
+| Warehouse Intelligence | Tracks warehouse KPIs and inventory movement. |
+| Demand Planning Intelligence | Supports demand forecasting and planning decisions. |
+| Logistics & Transportation Intelligence | Monitors transportation performance and logistics health. |
+| Executive Decision Center | Consolidates KPIs and generates executive recommendations for decision-makers. |
 - Gmail
 - GitHub
