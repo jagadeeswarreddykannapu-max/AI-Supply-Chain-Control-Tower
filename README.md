@@ -47,3 +47,20 @@ The AI Supply Chain Control Tower consists of seven interconnected automation wo
 | Executive Decision Center | Consolidates KPIs and generates executive recommendations for decision-makers. |
 - Gmail
 - GitHub
+---
+
+# 📂 Repository Structure
+
+```text
+AI-Supply-Chain-Control-Tower/
+│
+├── Architecture/
+├── Dataset/
+├── Documentation/
+├── Images/
+├── n8n/
+│   ├── Workflows/
+│   └── Screenshots/
+├── README.md
+└── LICENSE
+```
