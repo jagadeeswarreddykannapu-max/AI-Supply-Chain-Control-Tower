@@ -1,0 +1,346 @@
+{
+  "name": "2. Supplier Risk Intelligence",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "95b6255b-2295-4c3d-8389-f6806411c3e1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 565135936,
+          "mode": "list",
+          "cachedResultName": "Procurement Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=565135936"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "bd802ed2-2413-40e5-b8fa-b562471285be",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.all();\n\nfor (const item of data) {\n\n    let score = 0;\n\n    // Risk Level\n    if (item.json.Risk_Level === \"Critical\") score += 50;\n    else if (item.json.Risk_Level === \"High\") score += 30;\n    else if (item.json.Risk_Level === \"Medium\") score += 15;\n\n    // Procurement Status\n    if (item.json.Procurement_Status === \"Approval Required\")\n        score += 20;\n\n    // Procurement Category\n    if (item.json.Procurement_Category === \"Emergency Purchase\")\n        score += 15;\n\n    // Supplier Risk\n    if (item.json.Supplier_Action === \"Immediate Follow-up\")\n        score += 15;\n    else if (item.json.Supplier_Action === \"Monitor Supplier\")\n        score += 8;\n\n    // Lead Time\n    if (Number(item.json.Lead_Time_Days) > 20)\n        score += 10;\n\n    // Final Score\n    item.json.Supplier_Risk_Score = Math.min(score,100);\n\n    // Classification\n    if(score >= 80)\n        item.json.Supplier_Risk = \"Very High\";\n    else if(score >= 60)\n        item.json.Supplier_Risk = \"High\";\n    else if(score >= 40)\n        item.json.Supplier_Risk = \"Medium\";\n    else\n        item.json.Supplier_Risk = \"Low\";\n\n}\n\nreturn data;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e3cd8902-adf5-4559-9f87-e8ba0d0ffd11",
+      "name": "Supplier Risk Score"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Sort by Supplier Risk Score (Highest first)\nitems.sort((a, b) => {\n  return b.json.Supplier_Risk_Score - a.json.Supplier_Risk_Score;\n});\n\n// Keep only Top 10\nreturn items.slice(0, 10);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "e5797ae6-dd0e-41ea-a41e-bae727ef429e",
+      "name": "Top 10 Suppliers"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst totalSuppliers = items.length;\n\nconst veryHigh = items.filter(i =>\n    i.json.Supplier_Risk === \"Very High\").length;\n\nconst high = items.filter(i =>\n    i.json.Supplier_Risk === \"High\").length;\n\nconst medium = items.filter(i =>\n    i.json.Supplier_Risk === \"Medium\").length;\n\nconst low = items.filter(i =>\n    i.json.Supplier_Risk === \"Low\").length;\n\nconst averageRisk =\nitems.reduce((sum, i) =>\nsum + Number(i.json.Supplier_Risk_Score), 0) / totalSuppliers;\n\nconst highestRiskSupplier = items[0].json.Supplier;\n\nconst highestWarehouse = items[0].json.Warehouse;\n\nconst averageLeadTime =\nitems.reduce((sum, i) =>\nsum + Number(i.json.Lead_Time_Days), 0) / totalSuppliers;\n\nconst totalProcurementValue =\nitems.reduce((sum, i) =>\nsum + Number(i.json.Estimated_Order_Value), 0);\n\nreturn [\n{\njson:{\n\nKPI:\"Total High Risk Suppliers\",\nValue:totalSuppliers\n\n}\n},\n\n{\njson:{\n\nKPI:\"Very High Risk Suppliers\",\nValue:veryHigh\n\n}\n},\n\n{\njson:{\n\nKPI:\"High Risk Suppliers\",\nValue:high\n\n}\n},\n\n{\njson:{\n\nKPI:\"Medium Risk Suppliers\",\nValue:medium\n\n}\n},\n\n{\njson:{\n\nKPI:\"Low Risk Suppliers\",\nValue:low\n\n}\n},\n\n{\njson:{\n\nKPI:\"Average Supplier Risk Score\",\nValue:averageRisk.toFixed(2)\n\n}\n},\n\n{\njson:{\n\nKPI:\"Highest Risk Supplier\",\nValue:highestRiskSupplier\n\n}\n},\n\n{\njson:{\n\nKPI:\"Warehouse Most Affected\",\nValue:highestWarehouse\n\n}\n},\n\n{\njson:{\n\nKPI:\"Average Lead Time (Days)\",\nValue:averageLeadTime.toFixed(1)\n\n}\n},\n\n{\njson:{\n\nKPI:\"Estimated Procurement Value (USD)\",\nValue:totalProcurementValue.toFixed(2)\n\n}\n}\n\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "28fd78b7-cd65-4135-8c87-5f762575f995",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 737703524,
+          "mode": "list",
+          "cachedResultName": "Supplier Risk Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=737703524"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "KPI",
+              "displayName": "KPI",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Value",
+              "displayName": "Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "4877a3fc-393c-4423-9f3d-66ee5d387215",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst suppliers = {};\n\nfor (const item of items) {\n\n  const supplier = item.json.Supplier;\n\n  if (!suppliers[supplier]) {\n    suppliers[supplier] = {\n      Supplier: supplier,\n      Total_Products: 0,\n      Critical_Products: 0,\n      High_Products: 0,\n      Total_Risk_Score: 0\n    };\n  }\n\n  suppliers[supplier].Total_Products++;\n\n  if (item.json.Risk_Level === \"Critical\") {\n    suppliers[supplier].Critical_Products++;\n  }\n\n  if (item.json.Risk_Level === \"High\") {\n    suppliers[supplier].High_Products++;\n  }\n\n  suppliers[supplier].Total_Risk_Score += Number(item.json.Supplier_Risk_Score || 0);\n}\n\nconst output = [];\n\nfor (const supplier in suppliers) {\n\n  const s = suppliers[supplier];\n\n  const avgRisk =\n    s.Total_Risk_Score / s.Total_Products;\n\n  let supplierRisk = \"\";\n\n  if (avgRisk >= 80)\n    supplierRisk = \"Very High\";\n  else if (avgRisk >= 60)\n    supplierRisk = \"High\";\n  else if (avgRisk >= 40)\n    supplierRisk = \"Medium\";\n  else\n    supplierRisk = \"Low\";\n\n  output.push({\n    json: {\n      Supplier: s.Supplier,\n      Total_Products: s.Total_Products,\n      Critical_Products: s.Critical_Products,\n      High_Products: s.High_Products,\n      Supplier_Risk: supplierRisk\n    }\n  });\n}\n\noutput.sort((a, b) =>\n  b.json.Critical_Products - a.json.Critical_Products\n);\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "d85b9653-e906-4d00-87eb-54c245ba2ca6",
+      "name": "Supplier Risk Report"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 667731389,
+          "mode": "list",
+          "cachedResultName": "Supplier Risk Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=667731389"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Supplier",
+              "displayName": "Supplier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total_Products",
+              "displayName": "Total_Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Critical_Products",
+              "displayName": "Critical_Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "High_Products",
+              "displayName": "High_Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Supplier_Risk",
+              "displayName": "Supplier_Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        0
+      ],
+      "id": "fdfac720-5e6b-4af6-bc9a-6a3488317707",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Supplier Risk Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supplier Risk Score": {
+      "main": [
+        [
+          {
+            "node": "Supplier Risk Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Top 10 Suppliers": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supplier Risk Report": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Top 10 Suppliers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6d27dd32-b4c4-474d-802a-f4a4213a1146",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db6a3713026be0f1345db29a3a8949c4f93fe81d61b7f757d744e1de619c25f5"
+  },
+  "nodeGroups": [],
+  "id": "dVwkh1dooFF0ifN8",
+  "tags": []
+}

@@ -1,0 +1,611 @@
+{
+  "name": "7.Executive Decision Center",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        32
+      ],
+      "id": "4d9cfb09-8e16-4fa6-9cad-1cb22a35af14",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 667731389,
+          "mode": "list",
+          "cachedResultName": "Supplier Risk Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=667731389"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -144,
+        -80
+      ],
+      "id": "e80c9f32-59ed-4d36-b7a5-69a0a0d3fa49",
+      "name": "Get Supplier Risk Report",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 565135936,
+          "mode": "list",
+          "cachedResultName": "Procurement Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=565135936"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "9f48745d-42fb-4b0d-bf88-2a77b36fb31b",
+      "name": "Get Procurement Report",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 388996230,
+          "mode": "list",
+          "cachedResultName": "Warehouse Intelligence Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=388996230"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        304,
+        -64
+      ],
+      "id": "640fba65-81a0-41da-858d-31710fdde6a1",
+      "name": "Get Warehouse Report",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1756005553,
+          "mode": "list",
+          "cachedResultName": "Demand Intelligence Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=1756005553"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -64
+      ],
+      "id": "c692ad86-05e6-4cb5-981e-ccae85b0d15b",
+      "name": "Get Demand Report",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1775678722,
+          "mode": "list",
+          "cachedResultName": "Logistics & Transportation Intelligence Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=1775678722"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        -64
+      ],
+      "id": "2d48f8f4-e8d1-4c73-85b8-a5e27c776d0d",
+      "name": "Get Logistics Report",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// =============================\n// Executive KPI Engine\n// =============================\n\n// Read executed node outputs\nconst supplier = $(\"Get Supplier Risk Report\").all().map(i => i.json);\nconst procurement = $(\"Get Procurement Report\").all().map(i => i.json);\nconst warehouse = $(\"Get Warehouse Report\").all().map(i => i.json);\nconst demand = $(\"Get Demand Report\").all().map(i => i.json);\nconst logistics = $(\"Get Logistics Report\").all().map(i => i.json);\n\n// -----------------------------\n// Supplier KPIs\n// -----------------------------\nconst totalSuppliers = supplier.length;\n\nconst highRiskSuppliers = supplier.filter(r =>\n[\"High\",\"Very High\",\"Critical\"].includes(r.Supplier_Risk)\n).length;\n\n// -----------------------------\n// Procurement KPIs\n// -----------------------------\nconst openOrders = procurement.filter(r =>\n[\"Open\",\"Pending\"].includes(r.Procurement_Status)\n).length;\n\nconst emergencyOrders = procurement.filter(r =>\n[\"Critical\",\"Emergency\"].includes(r.Purchase_Priority)\n).length;\n\n// -----------------------------\n// Warehouse KPIs\n// -----------------------------\nconst criticalInventory = warehouse.filter(r =>\nr.Risk_Level === \"Critical\"\n).length;\n\nconst inventoryValueAtRisk = warehouse\n.filter(r => [\"Critical\",\"High\"].includes(r.Risk_Level))\n.reduce((sum,row)=>sum+Number(row.Inventory_Value_USD||0),0);\n\n// -----------------------------\n// Demand KPIs\n// -----------------------------\nconst forecastRisk = demand.filter(r =>\n[\"High\",\"Critical\"].includes(r.Forecast_Risk)\n).length;\n\n// -----------------------------\n// Logistics KPIs\n// -----------------------------\nconst criticalShipments = logistics.filter(r =>\nr.Transportation_Risk===\"Critical\"\n).length;\n\nconst avgLogisticsHealth =\nlogistics.reduce((sum,row)=>\nsum+Number(row.Logistics_Health_Score||0),0)\n/Math.max(logistics.length,1);\n\n// ======================================================\n// OVERALL SUPPLY CHAIN HEALTH (Balanced Score)\n// ======================================================\n\nlet supplierScore = Math.max(0,100-(highRiskSuppliers*10));\n\nlet procurementScore = Math.max(0,100-(emergencyOrders*3 + openOrders*2));\n\nlet warehouseScore = Math.max(0,100-(criticalInventory*15));\n\nlet demandScore = Math.max(0,100-(forecastRisk*2));\n\nlet logisticsScore = avgLogisticsHealth;\n\n// Weighted Average\nlet health = (\nsupplierScore*0.20 +\nprocurementScore*0.20 +\nwarehouseScore*0.20 +\ndemandScore*0.20 +\nlogisticsScore*0.20\n);\n\nhealth = Number(Math.max(0,Math.min(100,health)).toFixed(1));\n\n// -----------------------------\n// Business Status\n// -----------------------------\n\nlet status=\"\";\nlet priority=\"\";\nlet recommendation=\"\";\n\nif(health>=85){\nstatus=\"Excellent\";\npriority=\"Low\";\nrecommendation=\"Supply chain is performing efficiently. Continue monitoring KPIs.\";\n}\nelse if(health>=70){\nstatus=\"Healthy\";\npriority=\"Medium\";\nrecommendation=\"Minor operational improvements recommended.\";\n}\nelse if(health>=55){\nstatus=\"Warning\";\npriority=\"High\";\nrecommendation=\"Review supplier performance, procurement delays and logistics risks.\";\n}\nelse if(health>=40){\nstatus=\"High Risk\";\npriority=\"Critical\";\nrecommendation=\"Executive review required. Expedite procurement and transportation immediately.\";\n}\nelse{\nstatus=\"Critical\";\npriority=\"Critical\";\nrecommendation=\"Immediate executive intervention required. Activate contingency plans and prioritize critical shipments.\";\n}\n\n// -----------------------------\n// Output\n// -----------------------------\n\nreturn [{\njson:{\n\nReport_Date:new Date().toLocaleDateString(),\n\nTotal_Suppliers:totalSuppliers,\n\nHigh_Risk_Suppliers:highRiskSuppliers,\n\nOpen_Procurement_Orders:openOrders,\n\nEmergency_Orders:emergencyOrders,\n\nCritical_Inventory_Items:criticalInventory,\n\nHigh_Forecast_Risk_Items:forecastRisk,\n\nCritical_Shipments:criticalShipments,\n\nInventory_Value_At_Risk:Number(inventoryValueAtRisk.toFixed(2)),\n\nAverage_Logistics_Health:Number(avgLogisticsHealth.toFixed(1)),\n\nOverall_Supply_Chain_Health:health,\n\nBusiness_Status:status,\n\nExecutive_Priority:priority,\n\nExecutive_Recommendation:recommendation\n\n}\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        -64
+      ],
+      "id": "a9f5c6d1-cd6d-4afc-9ccc-5632c75870d3",
+      "name": "Executive KPI Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst health = Number(item.Overall_Supply_Chain_Health);\n\nconst suppliers = Number(item.High_Risk_Suppliers);\n\nconst emergency = Number(item.Emergency_Orders);\n\nconst inventory = Number(item.Critical_Inventory_Items);\n\nconst shipments = Number(item.Critical_Shipments);\n\nlet executiveLevel = \"\";\nlet topPriority = \"\";\nlet executiveAction = \"\";\nlet budgetImpact = \"\";\nlet escalation = \"\";\nlet nextReview = \"\";\n\n// ===================================\n// Executive Decision Logic\n// ===================================\n\nif (health < 40) {\n\n    executiveLevel = \"Critical\";\n\n    topPriority = \"Business Continuity\";\n\n    executiveAction =\n        \"Activate emergency supply chain response. Expedite procurement, transportation and inventory allocation.\";\n\n    budgetImpact = \"Very High\";\n\n    escalation = \"CEO & Supply Chain Director\";\n\n    nextReview = \"Every 2 Hours\";\n\n}\n\nelse if (health < 60) {\n\n    executiveLevel = \"High\";\n\n    topPriority = \"Risk Mitigation\";\n\n    executiveAction =\n        \"Prioritize high-risk suppliers, accelerate logistics and stabilize inventory.\";\n\n    budgetImpact = \"High\";\n\n    escalation = \"Supply Chain Director\";\n\n    nextReview = \"Daily\";\n\n}\n\nelse if (health < 80) {\n\n    executiveLevel = \"Medium\";\n\n    topPriority = \"Performance Optimization\";\n\n    executiveAction =\n        \"Monitor procurement and logistics performance. Improve forecast accuracy.\";\n\n    budgetImpact = \"Medium\";\n\n    escalation = \"Operations Manager\";\n\n    nextReview = \"Weekly\";\n\n}\n\nelse {\n\n    executiveLevel = \"Low\";\n\n    topPriority = \"Continuous Improvement\";\n\n    executiveAction =\n        \"Maintain current supply chain strategy and monitor KPIs.\";\n\n    budgetImpact = \"Low\";\n\n    escalation = \"No Escalation\";\n\n    nextReview = \"Monthly\";\n\n}\n\n// ===================================\n// Additional Recommendations\n// ===================================\n\nlet recommendations = [];\n\nif (suppliers > 3)\n    recommendations.push(\"Review high-risk suppliers.\");\n\nif (emergency > 10)\n    recommendations.push(\"Approve emergency procurement.\");\n\nif (inventory > 5)\n    recommendations.push(\"Increase safety stock.\");\n\nif (shipments > 10)\n    recommendations.push(\"Expedite critical shipments.\");\n\n// ===================================\n// Output\n// ===================================\n\nitem.Executive_Level = executiveLevel;\nitem.Top_Priority = topPriority;\nitem.Executive_Action = executiveAction;\nitem.Budget_Impact = budgetImpact;\nitem.Escalation_Level = escalation;\nitem.Next_Review = nextReview;\nitem.Strategic_Recommendations =\nrecommendations.join(\" \");\n\nreturn { json: item };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        -64
+      ],
+      "id": "e58bf6a3-fbcf-4e95-b3ca-3fa754ad0c08",
+      "name": "Executive Decision Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst health = item.Overall_Supply_Chain_Health;\nconst suppliers = item.High_Risk_Suppliers;\nconst emergency = item.Emergency_Orders;\nconst inventory = item.Critical_Inventory_Items;\nconst forecast = item.High_Forecast_Risk_Items;\nconst shipments = item.Critical_Shipments;\n\nconst level = item.Executive_Level;\nconst priority = item.Top_Priority;\nconst action = item.Executive_Action;\n\nlet summary = \"\";\n\n// =====================================\n// Executive Summary\n// =====================================\n\nsummary += `Overall Supply Chain Health is ${health}%. `;\n\nsummary += `The organization currently has ${suppliers} high-risk suppliers, `;\n\nsummary += `${emergency} emergency procurement orders, `;\n\nsummary += `${inventory} critical inventory items, `;\n\nsummary += `${forecast} high forecast risk products, `;\n\nsummary += `and ${shipments} critical logistics shipments. `;\n\nsummary += `The overall executive risk level is ${level}. `;\n\nsummary += `Top management priority is ${priority}. `;\n\nsummary += `Recommended executive action: ${action}`;\n\n// =====================================\n// Executive Alerts\n// =====================================\n\nlet alert = \"\";\n\nif(level === \"Critical\"){\n\nalert =\n\"🔴 CRITICAL ALERT: Immediate executive intervention required.\";\n\n}\n\nelse if(level === \"High\"){\n\nalert =\n\"🟠 HIGH ALERT: Management attention required.\";\n\n}\n\nelse if(level === \"Medium\"){\n\nalert =\n\"🟡 MEDIUM ALERT: Monitor operational performance.\";\n\n}\n\nelse{\n\nalert =\n\"🟢 LOW ALERT: Supply chain operating within acceptable limits.\";\n\n}\n\n// =====================================\n// Output\n// =====================================\n\nitem.Executive_AI_Summary = summary;\n\nitem.Executive_Alert = alert;\n\nreturn {\njson:item\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        -64
+      ],
+      "id": "f6347749-5bb5-44a4-bf08-ddc497c94952",
+      "name": "Executive AI Summary"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 508600773,
+          "mode": "list",
+          "cachedResultName": "Executive Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=508600773"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Report_Date",
+              "displayName": "Report_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total_Suppliers",
+              "displayName": "Total_Suppliers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "High_Risk_Suppliers",
+              "displayName": "High_Risk_Suppliers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Open_Procurement_Orders",
+              "displayName": "Open_Procurement_Orders",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Emergency_Orders",
+              "displayName": "Emergency_Orders",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Critical_Inventory_Items",
+              "displayName": "Critical_Inventory_Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "High_Forecast_Risk_Items",
+              "displayName": "High_Forecast_Risk_Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Critical_Shipments",
+              "displayName": "Critical_Shipments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Value_At_Risk",
+              "displayName": "Inventory_Value_At_Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Average_Logistics_Health",
+              "displayName": "Average_Logistics_Health",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overall_Supply_Chain_Health",
+              "displayName": "Overall_Supply_Chain_Health",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Business_Status",
+              "displayName": "Business_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executive_Priority",
+              "displayName": "Executive_Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executive_Recommendation",
+              "displayName": "Executive_Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executive_Level",
+              "displayName": "Executive_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Top_Priority",
+              "displayName": "Top_Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executive_Action",
+              "displayName": "Executive_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget_Impact",
+              "displayName": "Budget_Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Escalation_Level",
+              "displayName": "Escalation_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Next_Review",
+              "displayName": "Next_Review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Strategic_Recommendations",
+              "displayName": "Strategic_Recommendations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executive_AI_Summary",
+              "displayName": "Executive_AI_Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executive_Alert",
+              "displayName": "Executive_Alert",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1600,
+        -64
+      ],
+      "id": "fad128e9-a97d-4d30-abf3-6f0e0b55381a",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Supplier Risk Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Procurement Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Warehouse Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Demand Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Logistics Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Supplier Risk Report": {
+      "main": [
+        []
+      ]
+    },
+    "Get Procurement Report": {
+      "main": [
+        []
+      ]
+    },
+    "Get Warehouse Report": {
+      "main": [
+        []
+      ]
+    },
+    "Get Demand Report": {
+      "main": [
+        []
+      ]
+    },
+    "Get Logistics Report": {
+      "main": [
+        [
+          {
+            "node": "Executive KPI Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executive KPI Engine": {
+      "main": [
+        [
+          {
+            "node": "Executive Decision Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executive Decision Engine": {
+      "main": [
+        [
+          {
+            "node": "Executive AI Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executive AI Summary": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b39400e8-ce68-430e-a68d-6015427678bc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db6a3713026be0f1345db29a3a8949c4f93fe81d61b7f757d744e1de619c25f5"
+  },
+  "nodeGroups": [],
+  "id": "PQ6Ptppy6T21Qtp2",
+  "tags": []
+}

@@ -1,0 +1,686 @@
+{
+  "name": "6.Logistics & Transportation Intelligence",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1858c171-0898-424d-a0e2-4331726c261b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 565135936,
+          "mode": "list",
+          "cachedResultName": "Procurement Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=565135936"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6b473fbf-60bd-4322-b094-48bc5d0750e7",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst leadTime = Number(item.Lead_Time_Days || 0);\nconst daysToStockout = Number(item.Days_To_Stockout || 999);\nconst risk = item.Risk_Level || \"Low\";\nconst warehouse = item.Warehouse || \"\";\nconst supplier = item.Supplier || \"\";\n\nlet transportationRisk = \"\";\nlet deliveryPriority = \"\";\nlet shipmentStatus = \"\";\nlet logisticsScore = 100;\n\n// ===============================\n// Transportation Risk Assessment\n// ===============================\n\nif (risk === \"Critical\" || daysToStockout <= leadTime) {\n\n    transportationRisk = \"Critical\";\n    deliveryPriority = \"Emergency\";\n    shipmentStatus = \"Expedite Immediately\";\n    logisticsScore -= 50;\n\n}\nelse if (risk === \"High\" || daysToStockout <= (leadTime + 3)) {\n\n    transportationRisk = \"High\";\n    deliveryPriority = \"High\";\n    shipmentStatus = \"Priority Shipment\";\n    logisticsScore -= 30;\n\n}\nelse if (leadTime >= 20) {\n\n    transportationRisk = \"Medium\";\n    deliveryPriority = \"Medium\";\n    shipmentStatus = \"Monitor Transit\";\n    logisticsScore -= 15;\n\n}\nelse {\n\n    transportationRisk = \"Low\";\n    deliveryPriority = \"Normal\";\n    shipmentStatus = \"On Schedule\";\n\n}\n\n// =================================\n// Warehouse Adjustment\n// =================================\n\nif (warehouse.includes(\"Lyon\")) {\n    logisticsScore -= 5;\n}\n\nif (warehouse.includes(\"Marseille\")) {\n    logisticsScore -= 3;\n}\n\n// =================================\n// Supplier Adjustment\n// =================================\n\nif (supplier.includes(\"Supplier H\")) {\n    logisticsScore -= 10;\n}\n\nlogisticsScore = Math.max(0, Math.min(100, logisticsScore));\n\n// =================================\n// Output\n// =================================\n\nitem.Transportation_Risk = transportationRisk;\nitem.Delivery_Priority = deliveryPriority;\nitem.Shipment_Status = shipmentStatus;\nitem.Logistics_Health_Score = logisticsScore;\n\nreturn {\n    json: item\n};$input.item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "040e25a1-e4a0-448f-9a88-765939d82250",
+      "name": "Transportation Intelligence Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst leadTime = Number(item.Lead_Time_Days || 0);\nconst stockoutDays = Number(item.Days_To_Stockout || 999);\n\nconst transportRisk = item.Transportation_Risk || \"Low\";\nconst priority = item.Delivery_Priority || \"Normal\";\n\nlet deliveryRisk = \"\";\nlet estimatedDelay = \"\";\nlet reliability = \"\";\nlet logisticsStatus = \"\";\nlet score = 100;\n\n// =====================================\n// Delivery Risk Assessment\n// =====================================\n\nif (transportRisk === \"Critical\") {\n\n    deliveryRisk = \"Very High\";\n    estimatedDelay = \"High Probability\";\n    reliability = \"Poor\";\n    logisticsStatus = \"Critical\";\n    score -= 45;\n\n}\nelse if (transportRisk === \"High\") {\n\n    deliveryRisk = \"High\";\n    estimatedDelay = \"Possible\";\n    reliability = \"Moderate\";\n    logisticsStatus = \"Warning\";\n    score -= 30;\n\n}\nelse if (transportRisk === \"Medium\") {\n\n    deliveryRisk = \"Medium\";\n    estimatedDelay = \"Low\";\n    reliability = \"Good\";\n    logisticsStatus = \"Monitor\";\n    score -= 15;\n\n}\nelse {\n\n    deliveryRisk = \"Low\";\n    estimatedDelay = \"Very Low\";\n    reliability = \"Excellent\";\n    logisticsStatus = \"Healthy\";\n\n}\n\n// =====================================\n// Lead Time Adjustment\n// =====================================\n\nif (leadTime > 20)\n    score -= 10;\n\nif (stockoutDays < leadTime)\n    score -= 15;\n\n// =====================================\n// Priority Adjustment\n// =====================================\n\nif (priority === \"Emergency\")\n    score -= 15;\n\nelse if (priority === \"High\")\n    score -= 8;\n\n// =====================================\n// Final Score\n// =====================================\n\nscore = Math.max(0, Math.min(score, 100));\n\n// =====================================\n// Output\n// =====================================\n\nitem.Delivery_Risk = deliveryRisk;\nitem.Estimated_Delay = estimatedDelay;\nitem.Delivery_Reliability = reliability;\nitem.Logistics_Status = logisticsStatus;\nitem.Delivery_Health_Score = score;\n\nreturn {\n    json: item\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "3933e005-4d28-4929-8371-f96811465638",
+      "name": "Delivery Risk Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst transportRisk = item.Transportation_Risk || \"Low\";\nconst deliveryRisk = item.Delivery_Risk || \"Low\";\nconst priority = item.Delivery_Priority || \"Normal\";\n\nconst leadTime = Number(item.Lead_Time_Days || 0);\nconst stockoutDays = Number(item.Days_To_Stockout || 999);\n\nlet logisticsAction = \"\";\nlet transportMode = \"\";\nlet alternateTransport = \"\";\nlet routeStrategy = \"\";\nlet shipmentStrategy = \"\";\nlet inventoryStrategy = \"\";\nlet supplierStrategy = \"\";\nlet logisticsCost = \"\";\nlet deliverySpeed = \"\";\nlet businessImpact = \"\";\nlet executiveRecommendation = \"\";\n\n// =====================================================\n// CRITICAL\n// =====================================================\n\nif (transportRisk === \"Critical\" || deliveryRisk === \"Very High\") {\n\n    logisticsAction = \"Emergency Shipment\";\n\n    transportMode = \"Air Freight\";\n\n    alternateTransport = \"Express Road\";\n\n    routeStrategy = \"Direct Delivery\";\n\n    shipmentStrategy = \"Split Shipment\";\n\n    inventoryStrategy = \"Transfer inventory from nearest warehouse immediately.\";\n\n    supplierStrategy = \"Evaluate alternate supplier with shorter lead time.\";\n\n    logisticsCost = \"Very High\";\n\n    deliverySpeed = \"Fastest\";\n\n    businessImpact =\n    \"High probability of stockout, production disruption and customer service impact.\";\n\n    executiveRecommendation =\n    \"Use Air Freight for critical quantity. Transfer inventory from nearby warehouse while replenishment is in transit. Review alternate supplier for future orders.\";\n\n}\n\n// =====================================================\n// HIGH\n// =====================================================\n\nelse if (transportRisk === \"High\") {\n\n    logisticsAction = \"Priority Shipment\";\n\n    transportMode = \"Rail Freight\";\n\n    alternateTransport = \"Road Freight\";\n\n    routeStrategy = \"Regional Hub Routing\";\n\n    shipmentStrategy = \"Priority Shipment\";\n\n    inventoryStrategy = \"Increase safety stock if available.\";\n\n    supplierStrategy = \"Monitor supplier delivery performance.\";\n\n    logisticsCost = \"Medium\";\n\n    deliverySpeed = \"Fast\";\n\n    businessImpact =\n    \"Potential service level reduction if shipment is delayed.\";\n\n    executiveRecommendation =\n    \"Prioritize shipment and monitor supplier performance. Consider road transportation if rail capacity is unavailable.\";\n\n}\n\n// =====================================================\n// MEDIUM\n// =====================================================\n\nelse if (transportRisk === \"Medium\") {\n\n    logisticsAction = \"Monitor Shipment\";\n\n    transportMode = \"Road Freight\";\n\n    alternateTransport = \"Rail Freight\";\n\n    routeStrategy = \"Standard Route\";\n\n    shipmentStrategy = \"Consolidated Shipment\";\n\n    inventoryStrategy = \"Maintain current warehouse allocation.\";\n\n    supplierStrategy = \"Continue current supplier.\";\n\n    logisticsCost = \"Low\";\n\n    deliverySpeed = \"Normal\";\n\n    businessImpact =\n    \"Minor transportation risk.\";\n\n    executiveRecommendation =\n    \"Continue monitoring shipment. No immediate action required.\";\n\n}\n\n// =====================================================\n// LOW\n// =====================================================\n\nelse {\n\n    logisticsAction = \"Standard Transportation\";\n\n    transportMode = \"Sea Freight\";\n\n    alternateTransport = \"Road Freight\";\n\n    routeStrategy = \"Regular Schedule\";\n\n    shipmentStrategy = \"Consolidated Shipment\";\n\n    inventoryStrategy = \"Maintain inventory policy.\";\n\n    supplierStrategy = \"Continue current supplier.\";\n\n    logisticsCost = \"Lowest\";\n\n    deliverySpeed = \"Standard\";\n\n    businessImpact =\n    \"Transportation operating normally.\";\n\n    executiveRecommendation =\n    \"Continue planned transportation schedule.\";\n\n}\n\n// =====================================================\n// SMART BUSINESS RULES\n// =====================================================\n\n// Shipment may arrive after stock runs out\nif (stockoutDays < leadTime) {\n\n    executiveRecommendation +=\n    \" Shipment may arrive after inventory depletion. Escalate to logistics manager.\";\n\n}\n\n// Long supplier lead time\nif (leadTime > 20) {\n\n    supplierStrategy =\n    \"Recommend alternate supplier with lower lead time.\";\n\n}\n\n// Emergency priority\nif (priority === \"Emergency\") {\n\n    transportMode = \"Air Freight\";\n\n    shipmentStrategy = \"Split Shipment\";\n\n    logisticsCost = \"Highest\";\n\n}\n\n// =====================================================\n// OUTPUT\n// =====================================================\n\nitem.Logistics_Action = logisticsAction;\nitem.Transport_Mode = transportMode;\nitem.Alternate_Transport = alternateTransport;\nitem.Route_Strategy = routeStrategy;\nitem.Shipment_Strategy = shipmentStrategy;\nitem.Inventory_Strategy = inventoryStrategy;\nitem.Supplier_Strategy = supplierStrategy;\nitem.Logistics_Cost_Impact = logisticsCost;\nitem.Delivery_Speed = deliverySpeed;\nitem.Logistics_Business_Impact = businessImpact;\nitem.Executive_Recommendation = executiveRecommendation;\n\nreturn {\n    json: item\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "be84f8ea-de44-4438-a421-93d7b223f535",
+      "name": "Logistics Recommendation Engine"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1775678722,
+          "mode": "list",
+          "cachedResultName": "Logistics & Transportation Intelligence Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=1775678722"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "SKU_ID",
+              "displayName": "SKU_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Product_Name",
+              "displayName": "Product_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Warehouse",
+              "displayName": "Warehouse",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Supplier",
+              "displayName": "Supplier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Current_Stock",
+              "displayName": "Current_Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Daily_Demand",
+              "displayName": "Daily_Demand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Safety_Stock",
+              "displayName": "Safety_Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_Time_Days",
+              "displayName": "Lead_Time_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_Status",
+              "displayName": "Forecast_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Suggested_Order_Qty",
+              "displayName": "Suggested_Order_Qty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estimated_Order_Value",
+              "displayName": "Estimated_Order_Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purchase_Priority",
+              "displayName": "Purchase_Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Procurement_Action",
+              "displayName": "Procurement_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Supplier_Action",
+              "displayName": "Supplier_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer_Recommendation",
+              "displayName": "Buyer_Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Procurement_Status",
+              "displayName": "Procurement_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Procurement_Category",
+              "displayName": "Procurement_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Unit_Cost",
+              "displayName": "Unit_Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Days_To_Stockout",
+              "displayName": "Days_To_Stockout",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reorder_Quantity",
+              "displayName": "Reorder_Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk_Level",
+              "displayName": "Risk_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Value_USD",
+              "displayName": "Inventory_Value_USD",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_7_Days",
+              "displayName": "Forecast_7_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_30_Days",
+              "displayName": "Forecast_30_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Predicted_Stock_7_Days",
+              "displayName": "Predicted_Stock_7_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Predicted_Stock_30_Days",
+              "displayName": "Predicted_Stock_30_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_Time_Demand",
+              "displayName": "Lead_Time_Demand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Transportation_Risk",
+              "displayName": "Transportation_Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Delivery_Priority",
+              "displayName": "Delivery_Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Shipment_Status",
+              "displayName": "Shipment_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Logistics_Health_Score",
+              "displayName": "Logistics_Health_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Delivery_Risk",
+              "displayName": "Delivery_Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estimated_Delay",
+              "displayName": "Estimated_Delay",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Delivery_Reliability",
+              "displayName": "Delivery_Reliability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Logistics_Status",
+              "displayName": "Logistics_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Delivery_Health_Score",
+              "displayName": "Delivery_Health_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Logistics_Action",
+              "displayName": "Logistics_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Transport_Mode",
+              "displayName": "Transport_Mode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Alternate_Transport",
+              "displayName": "Alternate_Transport",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Route_Strategy",
+              "displayName": "Route_Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Shipment_Strategy",
+              "displayName": "Shipment_Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Strategy",
+              "displayName": "Inventory_Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Supplier_Strategy",
+              "displayName": "Supplier_Strategy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Logistics_Cost_Impact",
+              "displayName": "Logistics_Cost_Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Delivery_Speed",
+              "displayName": "Delivery_Speed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Logistics_Business_Impact",
+              "displayName": "Logistics_Business_Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executive_Recommendation",
+              "displayName": "Executive_Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "899b9587-1154-4831-838e-8339fa3a37c4",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Transportation Intelligence Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transportation Intelligence Engine": {
+      "main": [
+        [
+          {
+            "node": "Delivery Risk Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delivery Risk Engine": {
+      "main": [
+        [
+          {
+            "node": "Logistics Recommendation Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Logistics Recommendation Engine": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "97511265-1f5c-4601-bdc1-862ff531db7c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db6a3713026be0f1345db29a3a8949c4f93fe81d61b7f757d744e1de619c25f5"
+  },
+  "nodeGroups": [],
+  "id": "uZ1dvG4QeqQW82fj",
+  "tags": []
+}

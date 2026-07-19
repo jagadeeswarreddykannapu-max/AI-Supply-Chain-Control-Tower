@@ -1,0 +1,228 @@
+{
+  "name": "3. AI Procurement Advisor",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "808dadd0-7d13-41df-9f58-ed49222c70d5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 565135936,
+          "mode": "list",
+          "cachedResultName": "Procurement Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=565135936"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6887b94c-bd10-4603-b777-d14d34095a33",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const stock = Number($json.Current_Stock);\nconst demand = Number($json.Daily_Demand);\nconst safety = Number($json.Safety_Stock);\nconst leadTime = Number($json.Lead_Time_Days);\nconst daysToStockout = Number($json.Days_To_Stockout);\nconst reorderQty = Number($json.Reorder_Quantity);\nconst risk = $json.Risk_Level;\nconst forecast = $json.Forecast_Status;\n\nlet decision = \"\";\nlet priority = \"\";\nlet action = \"\";\nlet reason = \"\";\n\nif (\n    risk === \"Critical\" ||\n    forecast === \"Stockout Expected Within 7 Days\"\n) {\n\n    decision = \"Raise Emergency Purchase Order\";\n\n    priority = \"Critical\";\n\n    action =\n    \"Approve purchase immediately, expedite supplier delivery and monitor inventory daily.\";\n\n    reason =\n    `Current stock is ${stock} units. Daily demand is ${demand} units. Stock will run out in ${daysToStockout.toFixed(1)} days. Lead time is ${leadTime} days. Immediate procurement is recommended.`;\n\n}\nelse if (\n    risk === \"High\" ||\n    forecast === \"Stockout Expected Within 30 Days\"\n) {\n\n    decision = \"Create Planned Purchase Order\";\n\n    priority = \"High\";\n\n    action =\n    \"Create purchase order this week and confirm supplier availability.\";\n\n    reason =\n    `Inventory is decreasing rapidly. Forecast indicates possible stockout within 30 days.`;\n\n}\nelse {\n\n    decision = \"No Immediate Procurement Required\";\n\n    priority = \"Normal\";\n\n    action =\n    \"Continue monitoring inventory.\";\n\n    reason =\n    \"Inventory level is healthy.\";\n\n}\n\nlet executiveRecommendation;\n\nif (priority === \"Critical\") {\n    executiveRecommendation = \"Executive approval recommended immediately.\";\n}\nelse if (priority === \"High\") {\n    executiveRecommendation = \"Manager approval recommended.\";\n}\nelse {\n    executiveRecommendation = \"No approval required.\";\n}\n\nlet confidence = 95;\n\nif (risk === \"High\") confidence = 90;\nif (risk === \"Medium\") confidence = 85;\nif (risk === \"Low\") confidence = 80;\n\n$json.AI_Decision = decision;\n$json.AI_Priority = priority;\n$json.AI_Action = action;\n$json.AI_Reason = reason;\n$json.Executive_Recommendation = executiveRecommendation;\n$json.AI_Confidence = confidence + \"%\";\n\nreturn {\n    json: $json\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c95b6cef-f6db-4373-9142-f5f595a597ea",
+      "name": "AI Procurement Advisor"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1618436462,
+          "mode": "list",
+          "cachedResultName": "AI Procurement Advisor",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=1618436462"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "SKU_ID",
+              "displayName": "SKU_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product",
+              "displayName": "Product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Risk",
+              "displayName": "Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Decision",
+              "displayName": "Decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action",
+              "displayName": "Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Procurement_Value",
+              "displayName": "Procurement_Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        0
+      ],
+      "id": "ea981e32-86ac-43b2-bb31-65464fa3ef15",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Procurement Advisor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Procurement Advisor": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "04c0ffa6-f2f0-4e04-8934-201b6380d791",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db6a3713026be0f1345db29a3a8949c4f93fe81d61b7f757d744e1de619c25f5"
+  },
+  "nodeGroups": [],
+  "id": "BaibejQ0OfqKAs0g",
+  "tags": []
+}

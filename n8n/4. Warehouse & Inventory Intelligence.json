@@ -1,0 +1,590 @@
+{
+  "name": "4. Warehouse & Inventory Intelligence",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5d925870-c759-4379-918e-c3f734efd2fa",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 565135936,
+          "mode": "list",
+          "cachedResultName": "Procurement Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=565135936"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "14c62f45-b477-4a2b-aedc-07e7dc590043",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst warehouses = {};\n\nfor (const item of items) {\n\n    const warehouse = item.json.Warehouse;\n\n    if (!warehouses[warehouse]) {\n\n        warehouses[warehouse] = {\n\n            Warehouse: warehouse,\n            Total_Products: 0,\n            Critical_Products: 0,\n            High_Products: 0,\n            Total_Inventory_Value: 0,\n            Total_Days: 0,\n            Overstock: 0,\n            Understock: 0,\n            Dead_Stock: 0,\n            Slow_Moving: 0\n\n        };\n\n    }\n\n    const w = warehouses[warehouse];\n\n    w.Total_Products++;\n\n    if (item.json.Risk_Level === \"Critical\")\n        w.Critical_Products++;\n\n    if (item.json.Risk_Level === \"High\")\n        w.High_Products++;\n\n    w.Total_Inventory_Value += Number(item.json.Inventory_Value_USD || 0);\n\n    w.Total_Days += Number(item.json.Days_To_Stockout || 0);\n\n    const stock = Number(item.json.Current_Stock);\n    const safety = Number(item.json.Safety_Stock);\n    const demand = Number(item.json.Daily_Demand);\n\n    // Understock\n    if (stock < safety)\n        w.Understock++;\n\n    // Overstock\n    if (stock > (safety * 3))\n        w.Overstock++;\n\n    // Dead Stock\n    if (demand === 0)\n        w.Dead_Stock++;\n\n    // Slow Moving\n    if (demand > 0 && demand < 3)\n        w.Slow_Moving++;\n\n}\n\nconst output = [];\n\nfor (const key in warehouses) {\n\n    const w = warehouses[key];\n\n    const avgDays = w.Total_Days / w.Total_Products;\n\n    let risk = \"\";\n    let recommendation = \"\";\n\n    if (w.Critical_Products >= 5) {\n\n        risk = \"Critical\";\n\n        recommendation =\n        \"Immediate replenishment and warehouse review required.\";\n\n    }\n    else if (w.High_Products >= 5) {\n\n        risk = \"High\";\n\n        recommendation =\n        \"Increase inventory monitoring and procurement planning.\";\n\n    }\n    else {\n\n        risk = \"Normal\";\n\n        recommendation =\n        \"Warehouse operating within acceptable limits.\";\n\n    }\n\n    output.push({\n\n        json: {\n\n            Warehouse: w.Warehouse,\n\n            Total_Products: w.Total_Products,\n\n            Critical_Products: w.Critical_Products,\n\n            High_Products: w.High_Products,\n\n            Total_Inventory_Value:\n                Number(w.Total_Inventory_Value.toFixed(2)),\n\n            Average_Days_To_Stockout:\n                Number(avgDays.toFixed(2)),\n\n            Overstock_Products: w.Overstock,\n\n            Understock_Products: w.Understock,\n\n            Dead_Stock: w.Dead_Stock,\n\n            Slow_Moving: w.Slow_Moving,\n\n            Warehouse_Risk: risk,\n\n            Recommended_Action: recommendation\n\n        }\n\n    });\n\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e48768d5-2a5d-4491-9705-70eaeaf51e2e",
+      "name": "Warehouse Intelligence Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst totalProducts = Number(item.Total_Products || 0);\nconst critical = Number(item.Critical_Products || 0);\nconst high = Number(item.High_Products || 0);\nconst overstock = Number(item.Overstock_Products || 0);\nconst understock = Number(item.Understock_Products || 0);\nconst deadStock = Number(item.Dead_Stock || 0);\nconst slowMoving = Number(item.Slow_Moving || 0);\nconst avgDays = Number(item.Average_Days_To_Stockout || 0);\n\nlet score = 100;\n\n// ===========================\n// Penalty Scoring\n// ===========================\n\nscore -= critical * 5;\nscore -= high * 2.5;\nscore -= overstock * 2;\nscore -= understock * 3;\nscore -= deadStock * 4;\nscore -= slowMoving * 1.5;\n\n// Days to Stockout\n\nif (avgDays < 5)\n    score -= 20;\nelse if (avgDays < 10)\n    score -= 10;\nelse if (avgDays < 20)\n    score -= 5;\n\n// Keep score between 0 and 100\n\nscore = Math.max(0, Math.min(100, Math.round(score)));\n\n\n// ===========================\n// Health Classification\n// ===========================\n\nlet health = \"\";\nlet recommendation = \"\";\nlet optimization = \"\";\n\nif (score >= 90) {\n\n    health = \"Excellent\";\n    recommendation = \"Inventory operating normally.\";\n    optimization = \"Maintain Current Inventory\";\n\n}\nelse if (score >= 75) {\n\n    health = \"Good\";\n    recommendation = \"Minor optimization required.\";\n    optimization = \"Fine Tune Inventory\";\n\n}\nelse if (score >= 60) {\n\n    health = \"Moderate\";\n    recommendation = \"Inventory needs attention.\";\n    optimization = \"Rebalance Inventory\";\n\n}\nelse if (score >= 40) {\n\n    health = \"Poor\";\n    recommendation = \"Immediate corrective action required.\";\n    optimization = \"Reduce Stockout Risk\";\n\n}\nelse {\n\n    health = \"Critical\";\n    recommendation = \"Urgent inventory optimization required.\";\n    optimization = \"Emergency Inventory Recovery\";\n\n}\n\n// Save Results\n\nitem.Inventory_Health_Score = score;\nitem.Inventory_Health = health;\nitem.Optimization_Recommendation = recommendation;\nitem.Inventory_Optimization = optimization;\n\nreturn {\n    json: item\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "d6356dfc-4461-416a-a79e-2f24cac68973",
+      "name": "Inventory Classification Engine "
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const health = $json.Inventory_Health;\nconst stockStatus = $json.Stock_Status;\nconst category = $json.Inventory_Category;\nconst abc = $json.ABC_Category;\n\nlet optimization = \"\";\nlet financialImpact = \"\";\nlet priority = \"\";\nlet aiSuggestion = \"\";\n\n// ----------------------------\n// Decision Engine\n// ----------------------------\n\nif (category === \"Dead Stock\") {\n\n    optimization = \"Liquidate Inventory\";\n\n    financialImpact =\n    \"High Working Capital Recovery\";\n\n    priority = \"Critical\";\n\n    aiSuggestion =\n    \"Recommend clearance sale, supplier return or disposal.\";\n\n}\n\nelse if (stockStatus === \"Understock\") {\n\n    optimization =\n    \"Increase Inventory\";\n\n    financialImpact =\n    \"Prevent Revenue Loss\";\n\n    priority = \"High\";\n\n    aiSuggestion =\n    \"Raise purchase order immediately.\";\n\n}\n\nelse if (stockStatus === \"Overstock\") {\n\n    optimization =\n    \"Reduce Inventory\";\n\n    financialImpact =\n    \"Reduce Holding Cost\";\n\n    priority = \"Medium\";\n\n    aiSuggestion =\n    \"Delay procurement and consider transferring stock to another warehouse.\";\n\n}\n\nelse {\n\n    optimization =\n    \"Maintain Current Inventory\";\n\n    financialImpact =\n    \"Inventory Optimized\";\n\n    priority = \"Low\";\n\n    aiSuggestion =\n    \"Continue monitoring inventory.\";\n\n}\n\n// ABC Enhancement\n\nif (abc === \"A\") {\n\n    aiSuggestion +=\n    \" High-value SKU. Daily monitoring recommended.\";\n\n}\n\n$json.Inventory_Optimization = optimization;\n$json.Business_Impact = financialImpact;\n$json.Action_Priority = priority;\n$json.AI_Recommendation = aiSuggestion;\n\nreturn {\n    json: $json\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        0
+      ],
+      "id": "0026c4b1-8372-4be9-bce4-9b6093c988c4",
+      "name": "Inventory Optimization Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst critical = Number(item.Critical_Products || 0);\nconst high = Number(item.High_Products || 0);\nconst overstock = Number(item.Overstock_Products || 0);\nconst understock = Number(item.Understock_Products || 0);\nconst slow = Number(item.Slow_Moving || 0);\nconst dead = Number(item.Dead_Stock || 0);\nconst avgDays = Number(item.Average_Days_To_Stockout || 0);\n\nlet utilization = \"\";\nlet recommendation = \"\";\nlet impact = \"\";\nlet priority = \"\";\n\n// Critical shortage\nif (critical >= 10) {\n\n    utilization = \"Critical\";\n\n    recommendation =\n        \"Urgent warehouse replenishment required.\";\n\n    impact =\n        \"High risk of stockout.\";\n\n    priority = \"Critical\";\n\n}\n\n// High risk\nelse if (high >= 8) {\n\n    utilization = \"High\";\n\n    recommendation =\n        \"Increase warehouse inventory.\";\n\n    impact =\n        \"Service level at risk.\";\n\n    priority = \"High\";\n\n}\n\n// Overstock\nelse if (overstock >= 8) {\n\n    utilization = \"Overstocked\";\n\n    recommendation =\n        \"Reduce purchasing and liquidate excess inventory.\";\n\n    impact =\n        \"Working capital blocked.\";\n\n    priority = \"Medium\";\n\n}\n\n// Dead inventory\nelse if (dead > 0 || slow >= 5) {\n\n    utilization = \"Inefficient\";\n\n    recommendation =\n        \"Review obsolete inventory.\";\n\n    impact =\n        \"Storage cost increasing.\";\n\n    priority = \"Medium\";\n\n}\n\n// Healthy\nelse {\n\n    utilization = \"Optimized\";\n\n    recommendation =\n        \"Warehouse operating efficiently.\";\n\n    impact =\n        \"Optimal inventory performance.\";\n\n    priority = \"Low\";\n\n}\n\nitem.Warehouse_Utilization = utilization;\nitem.Warehouse_Recommendation = recommendation;\nitem.Warehouse_Business_Impact = impact;\nitem.Warehouse_Priority = priority;\n\nreturn { json: item };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "475051e6-d31b-4e0b-963b-d1a72586a536",
+      "name": "Warehouse Utilization Engine"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 388996230,
+          "mode": "list",
+          "cachedResultName": "Warehouse Intelligence Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=388996230"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Warehouse",
+              "displayName": "Warehouse",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Products",
+              "displayName": "Total Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Critical Products",
+              "displayName": "Critical Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "High Products",
+              "displayName": "High Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Inventory Value",
+              "displayName": "Total Inventory Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Average Days To Stockout",
+              "displayName": "Average Days To Stockout",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overstock Products",
+              "displayName": "Overstock Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Understock Products",
+              "displayName": "Understock Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Dead Stock",
+              "displayName": "Dead Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Slow Moving",
+              "displayName": "Slow Moving",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Warehouse Risk",
+              "displayName": "Warehouse Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommended Action",
+              "displayName": "Recommended Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total_Products",
+              "displayName": "Total_Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Critical_Products",
+              "displayName": "Critical_Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "High_Products",
+              "displayName": "High_Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total_Inventory_Value",
+              "displayName": "Total_Inventory_Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Average_Days_To_Stockout",
+              "displayName": "Average_Days_To_Stockout",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overstock_Products",
+              "displayName": "Overstock_Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Understock_Products",
+              "displayName": "Understock_Products",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Dead_Stock",
+              "displayName": "Dead_Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Slow_Moving",
+              "displayName": "Slow_Moving",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Warehouse_Risk",
+              "displayName": "Warehouse_Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommended_Action",
+              "displayName": "Recommended_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Category",
+              "displayName": "Inventory_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Stock_Status",
+              "displayName": "Stock_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ABC_Category",
+              "displayName": "ABC_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Health_Score",
+              "displayName": "Inventory_Health_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Health",
+              "displayName": "Inventory_Health",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Optimization_Recommendation",
+              "displayName": "Optimization_Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Optimization",
+              "displayName": "Inventory_Optimization",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Business_Impact",
+              "displayName": "Business_Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Action_Priority",
+              "displayName": "Action_Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AI_Recommendation",
+              "displayName": "AI_Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Warehouse_Utilization",
+              "displayName": "Warehouse_Utilization",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Warehouse_Status",
+              "displayName": "Warehouse_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Warehouse_Recommendation",
+              "displayName": "Warehouse_Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "a0461c9f-4908-4e8b-9eff-9c62915f8bc5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Warehouse Intelligence Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warehouse Intelligence Engine": {
+      "main": [
+        [
+          {
+            "node": "Inventory Classification Engine ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inventory Classification Engine ": {
+      "main": [
+        [
+          {
+            "node": "Inventory Optimization Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inventory Optimization Engine": {
+      "main": [
+        [
+          {
+            "node": "Warehouse Utilization Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warehouse Utilization Engine": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5ae33756-e659-4769-9cc6-a1006d5bf00d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db6a3713026be0f1345db29a3a8949c4f93fe81d61b7f757d744e1de619c25f5"
+  },
+  "nodeGroups": [],
+  "id": "mtUiAHnCKHIXQH1l",
+  "tags": []
+}

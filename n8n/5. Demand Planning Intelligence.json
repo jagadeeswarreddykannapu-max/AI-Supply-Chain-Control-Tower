@@ -1,0 +1,606 @@
+{
+  "name": "5. Demand Planning Intelligence",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bad7622e-07e4-4bf7-9017-c177b0eba5ff",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 565135936,
+          "mode": "list",
+          "cachedResultName": "Procurement Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=565135936"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d37ee3da-7eae-4f71-8837-318646abd822",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst forecast = Number(item.Forecast_30_Days || item.Forecast_7_Days || 0);\nconst stock = Number(item.Current_Stock || 0);\nconst demand = Number(item.Daily_Demand || 0);\nconst days = Number(item.Days_To_Stockout || 999);\n\nlet trend = \"\";\nlet risk = \"\";\nlet priority = \"\";\nlet impact = \"\";\n\nif (forecast > stock * 1.5) {\n    trend = \"Rapid Growth\";\n    risk = \"High\";\n    priority = \"High\";\n    impact = \"Demand expected to exceed inventory.\";\n}\nelse if (forecast > stock) {\n    trend = \"Growing\";\n    risk = \"Medium\";\n    priority = \"Medium\";\n    impact = \"Inventory may become insufficient.\";\n}\nelse if (forecast < stock * 0.5) {\n    trend = \"Declining\";\n    risk = \"Low\";\n    priority = \"Low\";\n    impact = \"Possible excess inventory.\";\n}\nelse {\n    trend = \"Stable\";\n    risk = \"Low\";\n    priority = \"Low\";\n    impact = \"Inventory aligned with demand.\";\n}\n\nitem.Demand_Trend = trend;\nitem.Forecast_Risk = risk;\nitem.Action_Priority = priority;\nitem.Business_Impact = impact;\n\nreturn {\n    json: item\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "8e672934-3f31-41b6-8983-f4908b652645",
+      "name": "Demand Intelligence Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst forecast30 = Number(item.Forecast_30_Days || 0);\nconst forecast7 = Number(item.Forecast_7_Days || 0);\nconst demand = Number(item.Daily_Demand || 0);\n\nconst forecastRisk = item.Forecast_Risk || \"Low\";\nconst demandTrend = item.Demand_Trend || \"Stable\";\n\nlet confidenceScore = 100;\n\n// Penalize large difference between 7-day and 30-day forecasts\nconst variation = Math.abs(forecast30 - (forecast7 * 4));\n\nif (variation > 300) confidenceScore -= 35;\nelse if (variation > 150) confidenceScore -= 20;\nelse if (variation > 75) confidenceScore -= 10;\n\n// Penalize high forecast risk\nif (forecastRisk === \"High\") confidenceScore -= 20;\nelse if (forecastRisk === \"Medium\") confidenceScore -= 10;\n\n// Penalize rapid demand changes\nif (demandTrend === \"Rapid Growth\") confidenceScore -= 15;\nelse if (demandTrend === \"Growing\") confidenceScore -= 8;\n\n// Keep score between 0 and 100\nconfidenceScore = Math.max(0, Math.min(100, confidenceScore));\n\nlet confidence = \"\";\nlet reliability = \"\";\nlet planning = \"\";\n\nif (confidenceScore >= 85) {\n    confidence = \"High\";\n    reliability = \"Reliable\";\n    planning = \"Safe\";\n}\nelse if (confidenceScore >= 65) {\n    confidence = \"Medium\";\n    reliability = \"Moderate\";\n    planning = \"Review\";\n}\nelse {\n    confidence = \"Low\";\n    reliability = \"Unstable\";\n    planning = \"Risk\";\n}\n\nitem.Forecast_Accuracy_Score = confidenceScore;\nitem.Forecast_Confidence = confidence;\nitem.Forecast_Reliability = reliability;\nitem.Planning_Confidence = planning;\n\nreturn {\n    json: item\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "04faa5a7-31d9-4ddf-8119-510dc4510c12",
+      "name": "Forecast Accuracy Engine"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $json;\n\nconst risk = item.Forecast_Risk || \"Low\";\nconst confidence = item.Forecast_Confidence || \"High\";\nconst predictedStock = Number(item.Predicted_Stock_30_Days || 0);\nconst leadDemand = Number(item.LeadTime_Demand || 0);\nconst trend = item.Demand_Trend || \"Stable\";\n\nlet demandAction = \"\";\nlet procurementAction = \"\";\nlet inventoryAction = \"\";\nlet distributionAction = \"\";\nlet executiveDecision = \"\";\n\n// =============================\n// HIGH RISK\n// =============================\nif (risk === \"High\") {\n\n    demandAction = \"Increase demand monitoring immediately.\";\n    procurementAction = \"Create emergency purchase order.\";\n    inventoryAction = \"Replenish inventory immediately.\";\n    distributionAction = \"Prioritize warehouse allocation.\";\n    executiveDecision = \"Immediate executive intervention required.\";\n\n}\n\n// =============================\n// MEDIUM RISK\n// =============================\nelse if (risk === \"Medium\") {\n\n    demandAction = \"Review demand forecast.\";\n    procurementAction = \"Prepare replenishment plan.\";\n    inventoryAction = \"Increase safety stock.\";\n    distributionAction = \"Monitor warehouse inventory.\";\n    executiveDecision = \"Manager approval recommended.\";\n\n}\n\n// =============================\n// LOW RISK\n// =============================\nelse {\n\n    demandAction = \"Continue regular monitoring.\";\n    procurementAction = \"Standard purchasing cycle.\";\n    inventoryAction = \"Maintain inventory level.\";\n    distributionAction = \"Normal warehouse operations.\";\n    executiveDecision = \"No action required.\";\n\n}\n\n// Extra intelligence\n\nif (predictedStock < 0) {\n    inventoryAction = \"Inventory shortage expected. Replenish immediately.\";\n}\n\nif (leadDemand > Math.abs(predictedStock)) {\n    procurementAction = \"Supplier expedition recommended.\";\n}\n\nif (trend === \"Rapid Growth\") {\n    demandAction = \"Demand increasing rapidly. Review forecast daily.\";\n}\n\nif (confidence === \"Low\") {\n    executiveDecision = \"Forecast uncertainty detected. Executive review required.\";\n}\n\nitem.Demand_Action = demandAction;\nitem.Procurement_Action = procurementAction;\nitem.Inventory_Action = inventoryAction;\nitem.Distribution_Action = distributionAction;\nitem.Executive_Decision = executiveDecision;\n\nreturn {\n    json: item\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "8a10bd40-07fe-4583-90c5-cfca7a894688",
+      "name": "Demand Action Generator"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk",
+          "mode": "list",
+          "cachedResultName": "Supply chain control tower",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1756005553,
+          "mode": "list",
+          "cachedResultName": "Demand Intelligence Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ljDUvZvevj9gSNNu8LwVUR8vv-L9Sms-y7jORSegLGk/edit#gid=1756005553"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "SKU_ID",
+              "displayName": "SKU_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Product_Name",
+              "displayName": "Product_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Warehouse",
+              "displayName": "Warehouse",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Supplier",
+              "displayName": "Supplier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Current_Stock",
+              "displayName": "Current_Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Daily_Demand",
+              "displayName": "Daily_Demand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Safety_Stock",
+              "displayName": "Safety_Stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_Time_Days",
+              "displayName": "Lead_Time_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_Status",
+              "displayName": "Forecast_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Suggested_Order_Qty",
+              "displayName": "Suggested_Order_Qty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Estimated_Order_Value",
+              "displayName": "Estimated_Order_Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purchase_Priority",
+              "displayName": "Purchase_Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Procurement_Action",
+              "displayName": "Procurement_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Supplier_Action",
+              "displayName": "Supplier_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Buyer_Recommendation",
+              "displayName": "Buyer_Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Procurement_Status",
+              "displayName": "Procurement_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Procurement_Category",
+              "displayName": "Procurement_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Unit_Cost",
+              "displayName": "Unit_Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Days_To_Stockout",
+              "displayName": "Days_To_Stockout",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reorder_Quantity",
+              "displayName": "Reorder_Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk_Level",
+              "displayName": "Risk_Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Value_USD",
+              "displayName": "Inventory_Value_USD",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_7_Days",
+              "displayName": "Forecast_7_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_30_Days",
+              "displayName": "Forecast_30_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Predicted_Stock_7_Days",
+              "displayName": "Predicted_Stock_7_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Predicted_Stock_30_Days",
+              "displayName": "Predicted_Stock_30_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_Time_Demand",
+              "displayName": "Lead_Time_Demand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Demand_Trend",
+              "displayName": "Demand_Trend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_Risk",
+              "displayName": "Forecast_Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Action_Priority",
+              "displayName": "Action_Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Business_Impact",
+              "displayName": "Business_Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_Accuracy_Score",
+              "displayName": "Forecast_Accuracy_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_Confidence",
+              "displayName": "Forecast_Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Forecast_Reliability",
+              "displayName": "Forecast_Reliability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Planning_Confidence",
+              "displayName": "Planning_Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Demand_Action",
+              "displayName": "Demand_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Inventory_Action",
+              "displayName": "Inventory_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Distribution_Action",
+              "displayName": "Distribution_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Executive_Decision",
+              "displayName": "Executive_Decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "815299f8-9e8b-4aa1-a37e-ef6550bca95f",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "yHbolOQ3qChQbQDF",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Demand Intelligence Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demand Intelligence Engine": {
+      "main": [
+        [
+          {
+            "node": "Forecast Accuracy Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forecast Accuracy Engine": {
+      "main": [
+        [
+          {
+            "node": "Demand Action Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demand Action Generator": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "56633dfb-d889-49b4-901b-fa215b737198",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db6a3713026be0f1345db29a3a8949c4f93fe81d61b7f757d744e1de619c25f5"
+  },
+  "nodeGroups": [],
+  "id": "ipcSyza521u20aZV",
+  "tags": []
+}
