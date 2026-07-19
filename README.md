@@ -83,6 +83,6 @@ MSc Purchasing & Supply Chain Management
 
 📧 Open to opportunities in Supply Chain Analytics, Business Analytics, and Data Analytics.
 
-GitHub: *(add your GitHub profile URL here)*
+GitHub: *(https://github.com/jagadeeswarreddykannapu-max)*
 
 LinkedIn: *(https://www.linkedin.com/in/jagadeeswar-kannam/)*
