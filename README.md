@@ -64,3 +64,25 @@ AI-Supply-Chain-Control-Tower/
 ├── README.md
 └── LICENSE
 ```
+---
+
+# 🚀 Future Improvements
+
+- Deploy the project using GitHub Pages.
+- Integrate real-time ERP and API data sources.
+- Enhance AI-driven decision support.
+- Expand KPI monitoring and predictive analytics.
+- Improve executive dashboards and reporting capabilities.
+---
+
+# 👨‍💻 Author
+
+**Jagadeeswar Reddy**
+
+MSc Purchasing & Supply Chain Management
+
+📧 Open to opportunities in Supply Chain Analytics, Business Analytics, and Data Analytics.
+
+GitHub: *(add your GitHub profile URL here)*
+
+LinkedIn: *(https://www.linkedin.com/in/jagadeeswar-kannam/)*
