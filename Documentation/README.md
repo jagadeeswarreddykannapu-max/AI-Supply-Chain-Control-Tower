@@ -1,9 +1,5 @@
 # Documentation
 
-This folder contains the project report, technical documentation, and implementation guide.
-
-# Documentation
-
 This folder provides detailed documentation for the AI Supply Chain Control Tower project.
 
 ## Contents
